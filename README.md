@@ -327,6 +327,6 @@ This is a private project. For questions or issues, please contact the repositor
 
 **⚠️ Disclaimer**: This app is for educational/demonstration purposes. Always consult healthcare professionals for medical advice.
 
-Made with ❤️ using React Native and Expo
+
 
 </div>
