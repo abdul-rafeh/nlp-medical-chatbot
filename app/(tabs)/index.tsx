@@ -1,98 +1,253 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import { ChatHeader } from "@/components/chat/ChatHeader";
+import { ChatInput } from "@/components/chat/ChatInput";
+import { ChatMessage, Message } from "@/components/chat/ChatMessage";
+import { DebugModal } from "@/components/chat/DebugModal";
+import { SuggestedPrompts } from "@/components/chat/SuggestedPrompts";
+import { Colors, Spacing } from "@/constants/theme";
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import { ApiError, askQuestion } from "@/services/api";
+import { DebugInfo } from "@/types/api";
+import React, { useCallback, useRef, useState } from "react";
+import {
+  Alert,
+  FlatList,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
+  Switch,
+  Text,
+  View,
+} from "react-native";
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+export default function ChatScreen() {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [isTyping, setIsTyping] = useState(false);
+  const [debugMode, setDebugMode] = useState(false);
+  const [debugModalVisible, setDebugModalVisible] = useState(false);
+  const [selectedDebugInfo, setSelectedDebugInfo] = useState<DebugInfo | null>(
+    null
+  );
+  const flatListRef = useRef<FlatList>(null);
+  const colorScheme = useColorScheme() ?? "light";
+  const colors = Colors[colorScheme];
 
-export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
+  const scrollToBottom = useCallback(() => {
+    setTimeout(() => {
+      flatListRef.current?.scrollToEnd({ animated: true });
+    }, 100);
+  }, []);
+
+  const fetchAIResponse = useCallback(
+    async (userMessage: string) => {
+      setIsTyping(true);
+
+      try {
+        const response = await askQuestion(userMessage, debugMode);
+
+        const aiResponse: Message = {
+          id: Date.now().toString(),
+          text: response.answer,
+          isUser: false,
+          timestamp: new Date(),
+          intent: response.intent as any,
+          sources: response.sources,
+          debug: response.debug || null,
+        };
+
+        setMessages((prev) => [...prev, aiResponse]);
+        scrollToBottom();
+      } catch (error) {
+        console.error("Error fetching AI response:", error);
+
+        // Show error message to user
+        const errorMessage =
+          error instanceof ApiError
+            ? error.message
+            : "Failed to get response. Please try again.";
+
+        Alert.alert("Error", errorMessage, [{ text: "OK" }]);
+
+        // Optionally add an error message to the chat
+        const errorResponse: Message = {
+          id: Date.now().toString(),
+          text: "Sorry, I encountered an error while processing your question. Please try again or check your connection.",
+          isUser: false,
+          timestamp: new Date(),
+        };
+
+        setMessages((prev) => [...prev, errorResponse]);
+        scrollToBottom();
+      } finally {
+        setIsTyping(false);
+      }
+    },
+    [scrollToBottom, debugMode]
+  );
+
+  const handleSend = useCallback(
+    (text: string) => {
+      Keyboard.dismiss();
+
+      const userMessage: Message = {
+        id: Date.now().toString(),
+        text,
+        isUser: true,
+        timestamp: new Date(),
+      };
+
+      setMessages((prev) => [...prev, userMessage]);
+      scrollToBottom();
+
+      // Fetch AI response from API
+      fetchAIResponse(text);
+    },
+    [fetchAIResponse, scrollToBottom]
+  );
+
+  const handleNewChat = useCallback(() => {
+    setMessages([]);
+    setIsTyping(false);
+  }, []);
+
+  const handleSelectPrompt = useCallback(
+    (prompt: string) => {
+      handleSend(prompt);
+    },
+    [handleSend]
+  );
+
+  const handleSourcePress = useCallback((debugInfo: DebugInfo | null) => {
+    setSelectedDebugInfo(debugInfo);
+    setDebugModalVisible(true);
+  }, []);
+
+  const handleCloseDebugModal = useCallback(() => {
+    setDebugModalVisible(false);
+    setSelectedDebugInfo(null);
+  }, []);
+
+  const renderMessage = useCallback(
+    ({ item }: { item: Message }) => (
+      <ChatMessage message={item} onSourcePress={handleSourcePress} />
+    ),
+    [handleSourcePress]
+  );
+
+  const renderEmptyState = () => (
+    <View style={styles.emptyContainer}>
+      <SuggestedPrompts onSelectPrompt={handleSelectPrompt} />
+    </View>
+  );
+
+  const renderFooter = () => {
+    if (isTyping) {
+      return (
+        <ChatMessage
+          message={{
+            id: "typing",
+            text: "",
+            isUser: false,
+            timestamp: new Date(),
+          }}
+          isTyping
         />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+      );
+    }
+    return null;
+  };
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+  return (
+    <KeyboardAvoidingView
+      style={[styles.container, { backgroundColor: colors.background }]}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
+    >
+      <ChatHeader onNewChat={handleNewChat} onOpenHistory={() => {}} />
+
+      <View
+        style={[
+          styles.debugBar,
+          {
+            backgroundColor: colors.backgroundSecondary,
+            borderBottomColor: colors.divider,
+          },
+        ]}
+      >
+        <View style={styles.debugContent}>
+          <Text style={[styles.debugLabel, { color: colors.textSecondary }]}>
+            Debug Mode
+          </Text>
+          <Switch
+            value={debugMode}
+            onValueChange={setDebugMode}
+            trackColor={{ false: colors.divider, true: colors.accent }}
+            thumbColor={
+              debugMode ? colors.background : colors.backgroundSecondary
+            }
+            ios_backgroundColor={colors.divider}
+          />
+        </View>
+      </View>
+
+      <View style={styles.chatContainer}>
+        {messages.length === 0 ? (
+          renderEmptyState()
+        ) : (
+          <FlatList
+            ref={flatListRef}
+            data={messages}
+            renderItem={renderMessage}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={[
+              styles.messagesList,
+              { paddingBottom: Spacing.md },
+            ]}
+            showsVerticalScrollIndicator={false}
+            ListFooterComponent={renderFooter}
+            onContentSizeChange={scrollToBottom}
+            keyboardDismissMode="interactive"
+          />
+        )}
+      </View>
+
+      <ChatInput onSend={handleSend} disabled={isTyping} />
+
+      <DebugModal
+        visible={debugModalVisible}
+        onClose={handleCloseDebugModal}
+        debugInfo={selectedDebugInfo}
+      />
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  container: {
+    flex: 1,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  chatContainer: {
+    flex: 1,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+  },
+  messagesList: {
+    paddingTop: Spacing.md,
+  },
+  debugBar: {
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderBottomWidth: 1,
+  },
+  debugContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  debugLabel: {
+    fontSize: 13,
+    fontWeight: "500",
   },
 });

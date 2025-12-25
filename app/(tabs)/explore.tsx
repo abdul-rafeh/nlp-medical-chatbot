@@ -1,112 +1,281 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
-
-import { Collapsible } from '@/components/ui/collapsible';
-import { ExternalLink } from '@/components/external-link';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
+import React from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Linking,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Colors, BorderRadius, Spacing } from '@/constants/theme';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Fonts } from '@/constants/theme';
 
-export default function TabTwoScreen() {
+interface HealthResource {
+  id: string;
+  icon: string;
+  title: string;
+  description: string;
+  category: string;
+}
+
+interface HealthTip {
+  id: string;
+  icon: string;
+  title: string;
+  content: string;
+}
+
+const HEALTH_RESOURCES: HealthResource[] = [
+  {
+    id: '1',
+    icon: '🏥',
+    title: 'Find a Doctor',
+    description: 'Locate healthcare providers near you',
+    category: 'Care',
+  },
+  {
+    id: '2',
+    icon: '💊',
+    title: 'Drug Information',
+    description: 'Learn about medications and interactions',
+    category: 'Medications',
+  },
+  {
+    id: '3',
+    icon: '🩺',
+    title: 'Symptom Checker',
+    description: 'Understand your symptoms better',
+    category: 'Tools',
+  },
+  {
+    id: '4',
+    icon: '📋',
+    title: 'Health Records',
+    description: 'Access your medical history',
+    category: 'Records',
+  },
+];
+
+const HEALTH_TIPS: HealthTip[] = [
+  {
+    id: '1',
+    icon: '💧',
+    title: 'Stay Hydrated',
+    content: 'Drink at least 8 glasses of water daily to maintain optimal body function.',
+  },
+  {
+    id: '2',
+    icon: '🛌',
+    title: 'Quality Sleep',
+    content: 'Aim for 7-9 hours of quality sleep each night for better health.',
+  },
+  {
+    id: '3',
+    icon: '🧘',
+    title: 'Mental Wellness',
+    content: 'Practice mindfulness or meditation to reduce stress and anxiety.',
+  },
+  {
+    id: '4',
+    icon: '🥗',
+    title: 'Balanced Diet',
+    content: 'Include fruits, vegetables, and whole grains in your daily meals.',
+  },
+];
+
+export default function LearnScreen() {
+  const insets = useSafeAreaInsets();
+  const colorScheme = useColorScheme() ?? 'light';
+  const colors = Colors[colorScheme];
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#D0D0D0', dark: '#353636' }}
-      headerImage={
-        <IconSymbol
-          size={310}
-          color="#808080"
-          name="chevron.left.forwardslash.chevron.right"
-          style={styles.headerImage}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText
-          type="title"
-          style={{
-            fontFamily: Fonts.rounded,
-          }}>
-          Explore
-        </ThemedText>
-      </ThemedView>
-      <ThemedText>This app includes example code to help you get started.</ThemedText>
-      <Collapsible title="File-based routing">
-        <ThemedText>
-          This app has two screens:{' '}
-          <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> and{' '}
-          <ThemedText type="defaultSemiBold">app/(tabs)/explore.tsx</ThemedText>
-        </ThemedText>
-        <ThemedText>
-          The layout file in <ThemedText type="defaultSemiBold">app/(tabs)/_layout.tsx</ThemedText>{' '}
-          sets up the tab navigator.
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/router/introduction">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Android, iOS, and web support">
-        <ThemedText>
-          You can open this project on Android, iOS, and the web. To open the web version, press{' '}
-          <ThemedText type="defaultSemiBold">w</ThemedText> in the terminal running this project.
-        </ThemedText>
-      </Collapsible>
-      <Collapsible title="Images">
-        <ThemedText>
-          For static images, you can use the <ThemedText type="defaultSemiBold">@2x</ThemedText> and{' '}
-          <ThemedText type="defaultSemiBold">@3x</ThemedText> suffixes to provide files for
-          different screen densities
-        </ThemedText>
-        <Image
-          source={require('@/assets/images/react-logo.png')}
-          style={{ width: 100, height: 100, alignSelf: 'center' }}
-        />
-        <ExternalLink href="https://reactnative.dev/docs/images">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Light and dark mode components">
-        <ThemedText>
-          This template has light and dark mode support. The{' '}
-          <ThemedText type="defaultSemiBold">useColorScheme()</ThemedText> hook lets you inspect
-          what the user&apos;s current color scheme is, and so you can adjust UI colors accordingly.
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/develop/user-interface/color-themes/">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Animations">
-        <ThemedText>
-          This template includes an example of an animated component. The{' '}
-          <ThemedText type="defaultSemiBold">components/HelloWave.tsx</ThemedText> component uses
-          the powerful{' '}
-          <ThemedText type="defaultSemiBold" style={{ fontFamily: Fonts.mono }}>
-            react-native-reanimated
-          </ThemedText>{' '}
-          library to create a waving hand animation.
-        </ThemedText>
-        {Platform.select({
-          ios: (
-            <ThemedText>
-              The <ThemedText type="defaultSemiBold">components/ParallaxScrollView.tsx</ThemedText>{' '}
-              component provides a parallax effect for the header image.
-            </ThemedText>
-          ),
-        })}
-      </Collapsible>
-    </ParallaxScrollView>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={[styles.header, { 
+        backgroundColor: colors.headerBackground,
+        paddingTop: insets.top + Spacing.sm,
+      }]}>
+        <Text style={[styles.headerTitle, { color: colors.headerText }]}>
+          Health Resources
+        </Text>
+        <Text style={[styles.headerSubtitle, { color: colors.headerText, opacity: 0.8 }]}>
+          Learn more about your health
+        </Text>
+      </View>
+
+      <ScrollView 
+        style={styles.content}
+        contentContainerStyle={styles.contentContainer}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Quick Actions */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>
+            Quick Actions
+          </Text>
+          <View style={styles.resourcesGrid}>
+            {HEALTH_RESOURCES.map((resource) => (
+              <TouchableOpacity
+                key={resource.id}
+                style={[styles.resourceCard, {
+                  backgroundColor: colors.cardBackground,
+                  borderColor: colors.cardBorder,
+                }]}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.resourceIcon}>{resource.icon}</Text>
+                <Text style={[styles.resourceTitle, { color: colors.text }]}>
+                  {resource.title}
+                </Text>
+                <Text style={[styles.resourceDesc, { color: colors.textSecondary }]}>
+                  {resource.description}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        {/* Daily Health Tips */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>
+            Daily Health Tips
+          </Text>
+          {HEALTH_TIPS.map((tip) => (
+            <View
+              key={tip.id}
+              style={[styles.tipCard, {
+                backgroundColor: colors.cardBackground,
+                borderColor: colors.cardBorder,
+              }]}
+            >
+              <View style={[styles.tipIconContainer, { backgroundColor: colors.accent + '20' }]}>
+                <Text style={styles.tipIcon}>{tip.icon}</Text>
+              </View>
+              <View style={styles.tipContent}>
+                <Text style={[styles.tipTitle, { color: colors.text }]}>
+                  {tip.title}
+                </Text>
+                <Text style={[styles.tipText, { color: colors.textSecondary }]}>
+                  {tip.content}
+                </Text>
+              </View>
+            </View>
+          ))}
+        </View>
+
+        {/* Disclaimer */}
+        <View style={[styles.disclaimer, { backgroundColor: colors.cardBackground, borderColor: colors.cardBorder }]}>
+          <IconSymbol name="exclamationmark.triangle.fill" size={20} color={colors.warning} />
+          <Text style={[styles.disclaimerText, { color: colors.textSecondary }]}>
+            This app provides general health information only. Always consult with a qualified healthcare provider for medical advice.
+          </Text>
+        </View>
+
+        <View style={{ height: Spacing.xl }} />
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  headerImage: {
-    color: '#808080',
-    bottom: -90,
-    left: -35,
-    position: 'absolute',
+  container: {
+    flex: 1,
   },
-  titleContainer: {
+  header: {
+    paddingHorizontal: Spacing.md,
+    paddingBottom: Spacing.md,
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  headerSubtitle: {
+    fontSize: 14,
+    textAlign: 'center',
+    marginTop: 4,
+  },
+  content: {
+    flex: 1,
+  },
+  contentContainer: {
+    padding: Spacing.md,
+  },
+  section: {
+    marginBottom: Spacing.lg,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: Spacing.md,
+  },
+  resourcesGrid: {
     flexDirection: 'row',
-    gap: 8,
+    flexWrap: 'wrap',
+    gap: Spacing.sm,
+  },
+  resourceCard: {
+    width: '48%',
+    padding: Spacing.md,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+  },
+  resourceIcon: {
+    fontSize: 28,
+    marginBottom: Spacing.sm,
+  },
+  resourceTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  resourceDesc: {
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  tipCard: {
+    flexDirection: 'row',
+    padding: Spacing.md,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    marginBottom: Spacing.sm,
+    alignItems: 'flex-start',
+  },
+  tipIconContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: BorderRadius.md,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: Spacing.md,
+  },
+  tipIcon: {
+    fontSize: 22,
+  },
+  tipContent: {
+    flex: 1,
+  },
+  tipTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  tipText: {
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  disclaimer: {
+    flexDirection: 'row',
+    padding: Spacing.md,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    alignItems: 'flex-start',
+    gap: Spacing.sm,
+  },
+  disclaimerText: {
+    flex: 1,
+    fontSize: 12,
+    lineHeight: 18,
   },
 });
